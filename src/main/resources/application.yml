@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: gk-data-display
+  datasource:
+    driver-class-name: org.sqlite.JDBC
+    url: jdbc:sqlite:db/gk_luqu_data.db

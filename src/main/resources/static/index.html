@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>对账系统</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<script src="lib/vue.3.4.26.global.min.js"></script>
+<script src="lib/axios.min.js"></script>
+<link href="lib/bootstrap@5.3.3.min.css" rel="stylesheet">
+<script src="lib/bootstrap@5.3.3.min.js"></script>
+
+<script src="js/axios-config.js?v=1.0.1"></script>
+<script src="js/objects.js?vVvVvV=1.0.1"></script>
+<script src="js/util.js?vVvVvVvVv=1.0.1"></script>
+<body>
+<div id="app">
+    <div>
+        <label>
+            姓名<input v-model="gkPersonQuery.name" placeholder="姓名">
+        </label>
+        <br>
+        <label>
+            bmd<input v-model="gkPersonQuery.bmd" placeholder="bmd">
+        </label>
+        <br>
+        <label>
+            bmdFix<input v-model="gkPersonQuery.bmdFix" placeholder="bmdFix">
+        </label>
+        <br>
+        <label>
+            sfzh<input v-model="gkPersonQuery.sfzh" placeholder="sfzh">
+        </label>
+        <br>
+        <label>
+            yxmc<input v-model="gkPersonQuery.yxmc" placeholder="yxmc">
+        </label>
+        <br>
+        <label>
+            zymc<input v-model="gkPersonQuery.zymc" placeholder="zymc">
+        </label>
+        <br>
+        <label>
+            qtxx<input v-model="gkPersonQuery.qtxx" placeholder="qtxx">
+        </label>
+        <br>
+        <label>
+            phone<input v-model="gkPersonQuery.phone" placeholder="phone">
+        </label>
+        <br>
+        <label>
+            cc<input v-model="gkPersonQuery.cc" placeholder="cc">
+        </label>
+        <br>
+    </div>
+    <div>
+        <button @click="query">button</button>
+    </div>
+</div>
+
+
+<script src="js/app.js?v=1.0.0"></script>
+</body>
+</html>
