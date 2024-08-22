@@ -24,7 +24,7 @@ public class QueryGkDataController {
     @Resource
     private QueryGkDataLogic queryGkDataLogic;
 
-    @RequestMapping("/queryGkData")
+    @RequestMapping("/query/gkData")
     public List<GkPersonDto> queryGkData(@RequestBody GkPersonQuery gkPersonQuery) {
         if (gkPersonQuery == null) {
             throw new FrontException("参数不能为空");

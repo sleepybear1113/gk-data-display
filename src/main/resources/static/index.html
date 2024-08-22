@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>对账系统</title>
+    <title>高考录取查询系统</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <script src="lib/vue.3.4.26.global.min.js"></script>
@@ -10,51 +10,354 @@
 <link href="lib/bootstrap@5.3.3.min.css" rel="stylesheet">
 <script src="lib/bootstrap@5.3.3.min.js"></script>
 
-<script src="js/axios-config.js?v=1.0.1"></script>
-<script src="js/objects.js?vVvVvV=1.0.1"></script>
-<script src="js/util.js?vVvVvVvVv=1.0.1"></script>
+<script src="js/axios-config.js?v=1.0.0"></script>
+<script src="js/objects.js?vVvVvV=1.0.0"></script>
+<script src="js/util.js?vVvVvVvVv=1.0.0"></script>
+
 <body>
-<div id="app">
-    <div>
-        <label>
-            姓名<input v-model="gkPersonQuery.name" placeholder="姓名">
-        </label>
-        <br>
-        <label>
-            bmd<input v-model="gkPersonQuery.bmd" placeholder="bmd">
-        </label>
-        <br>
-        <label>
-            bmdFix<input v-model="gkPersonQuery.bmdFix" placeholder="bmdFix">
-        </label>
-        <br>
-        <label>
-            sfzh<input v-model="gkPersonQuery.sfzh" placeholder="sfzh">
-        </label>
-        <br>
-        <label>
-            yxmc<input v-model="gkPersonQuery.yxmc" placeholder="yxmc">
-        </label>
-        <br>
-        <label>
-            zymc<input v-model="gkPersonQuery.zymc" placeholder="zymc">
-        </label>
-        <br>
-        <label>
-            qtxx<input v-model="gkPersonQuery.qtxx" placeholder="qtxx">
-        </label>
-        <br>
-        <label>
-            phone<input v-model="gkPersonQuery.phone" placeholder="phone">
-        </label>
-        <br>
-        <label>
-            cc<input v-model="gkPersonQuery.cc" placeholder="cc">
-        </label>
-        <br>
+<div id="app" class="container-fluid px-0 g-0">
+    <div id="floating-div">
+        <div class="modal fade" id="tips" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="exampleModalLabel">使用手册</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <ol>
+                            <li>本系统可以查询2001年至今的嘉兴市高考录取数据，数据由于格式等问题可能仅能显示部分。</li>
+                            <li>
+                                在输入框内可以输入列表，每个数据需要以【,】分隔，即可查询多个数据。如【张三,李四,王五】即可查询该三人的录取数据（所有输入框均支持）。
+                            </li>
+                            <li>
+                                支持模糊匹配，但需要手动指定匹配的方式。使用符号【*】可以代替任意字符，如【刘*军】可以匹配【刘】开头【军】结尾的，中间为任意字符的名字如【刘小军】、【刘军】。同时也不限于插入在中间，如【张小*】可以匹配所有【张小】开头的人名；【*嘉*】可以匹配所有中间带有【嘉】的人名（除电话外所有输入框均支持）。
+                            </li>
+                            <li>录取院校处若输入单个字符【*】，即可筛选出所有有被录取的结果。</li>
+                            <li>结果框分为蓝色和红色两种，蓝色代表有录取信息，红色代表未被录取。</li>
+                            <li>层次处本专科外还有未知，由于历史库中有部分录取数据无法确定层次，故可能该项为空数据。</li>
+                            <li>年份存在9999年，是无法确定该条数据的录取年份，也为历史数据的局限性。</li>
+                            <li>每个输入框按下回车键，均可直接进行查询。</li>
+                            <li>
+                                【报名点修正代码】：部分录取数据存在报名点为A，但是统计数据需要列入B报名点的，则在此进行修正，展示修改后的数据。
+                            </li>
+                            <li>查询结果最多显示{{appInfo.sqlLimitSize ? appInfo.sqlLimitSize : "【获取失败】"}}条。</li>
+                        </ol>
+                    </div>
+                    <div class="modal-footer">
+                        <span class="d-flex justify-content-start align-items-start">版本号：{{appInfo.version}}</span>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭[Esc]</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="alerts" style="position: fixed; z-index: 100; top: 20px; right: 20px">
+            <div v-for="key in Object.keys(alertObj)" :key="key">
+                <div class="alert" role="alert" :class="'alert-' + alertObj[key].type">
+                    <div v-if="alertObj[key].title">{{alertObj[key].title}}</div>
+                    <div v-if="alertObj[key].msg">{{alertObj[key].msg}}</div>
+                </div>
+            </div>
+        </div>
     </div>
-    <div>
-        <button @click="query">button</button>
+
+    <div id="title" class="row mb-2 mt-1 container-fluid">
+        <div class="col-md-2 d-flex"></div>
+        <div class="col-md-8 d-flex justify-content-center align-items-center">
+            <h1>高考录取查询系统</h1>
+        </div>
+        <div class="col-md-1 d-flex justify-content-end align-items-center">
+            <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#tips">帮助</button>
+        </div>
+        <div class="col-md-1 d-flex mt-3"><span>{{appInfo.version}}</span></div>
+    </div>
+
+    <div class="container-fluid">
+        <div class="row m-1">
+            <label class="col-md-1 d-flex"></label>
+
+            <label class="col-md-2 d-flex input-group-text input-group-sm">
+                姓名<input v-model="gkPersonQuery.name" placeholder="" class="form-control" @keyup.enter="query">
+            </label>
+            <label class="col-md-2 d-flex input-group-text input-group-sm">
+                考生号
+                <input v-model="gkPersonQuery.ksh" placeholder="考生号/学籍辅号/报名序号" class="form-control"
+                       @keyup.enter="query">
+            </label>
+            <label class="col-md-2 d-flex input-group-text input-group-sm">
+                身份证号<input v-model="gkPersonQuery.sfzh" placeholder="" class="form-control" @keyup.enter="query">
+            </label>
+            <label class="col-md-2 d-flex input-group-text input-group-sm">
+                电话<input v-model="gkPersonQuery.phone" placeholder="" class="form-control" @keyup.enter="query">
+            </label>
+            <label class="col-md-2 d-flex input-group-text input-group-sm">
+                毕业学校<input v-model="gkPersonQuery.qtxx" placeholder="" class="form-control" @keyup.enter="query">
+            </label>
+            <label class="col-md-1 d-flex">
+            </label>
+        </div>
+
+        <div>
+            <div class="row">
+                <label class="col-md-1 d-flex"></label>
+                <div class="col-md-4 d-flex">
+                    <span class="input-group-text">年份选择</span>
+                    <button class="btn btn-outline-secondary btn-sm" @click="chooseYears(3)">近3年</button>
+                    <button class="btn btn-outline-secondary btn-sm" @click="chooseYears(5)">近5年</button>
+                    <button class="btn btn-outline-secondary btn-sm" @click="chooseYears(10)">近10年</button>
+                    <button class="btn btn-outline-secondary btn-sm" @click="chooseYears(null)">全部</button>
+                </div>
+            </div>
+
+            <div class="row">
+                <label class="col-md-1 d-flex"></label>
+                <div class="col-md-9 d-flex flex-wrap">
+                    <span v-for="(year, index) in years" :key="year" class="me-2 mb-2">
+                        <label class="input-group-sm input-group-text align-items-center">
+                            {{year}}
+                            <input v-model="gkPersonQuery.year" :value="year" type="checkbox" class="form-check-input">
+                        </label>
+                    </span>
+                </div>
+                <label class="col-md-2 d-flex"></label>
+            </div>
+        </div>
+
+        <div class="row">
+            <label class="col-md-1 d-flex"></label>
+            <div class="col-md-4 d-flex">
+                <span class="input-group-text">层次</span>
+                <label class="input-group-text input-group-sm">
+                    全部
+                    <input class="form-check-input" type="radio" checked v-model="gkPersonQuery.cc" :value="null"
+                           name="cc-group">
+                </label>
+                <label class="input-group-text input-group-sm">
+                    本科
+                    <input class="form-check-input" type="radio" v-model="gkPersonQuery.cc" :value="'本科'"
+                           name="cc-group">
+                </label>
+                <label class="input-group-text input-group-sm">
+                    专科
+                    <input class="form-check-input" type="radio" v-model="gkPersonQuery.cc" :value="'专科'"
+                           name="cc-group">
+                </label>
+                <label class="input-group-text input-group-sm">
+                    未知
+                    <input class="form-check-input" type="radio" v-model="gkPersonQuery.cc" :value="'未知'"
+                           name="cc-group">
+                </label>
+            </div>
+
+            <div class="col-md-5 d-flex">
+                <span class="d-flex input-group-text input-group-sm">县市</span>
+                <div v-for="(xq, index) in xqList">
+                    <label class="input-group-text d-flex align-items-center">
+                        {{xq[1]}}
+                        <input v-model="gkPersonQuery.xqh" :value="xq[0]" type="checkbox" class="form-check-input">
+                    </label>
+                </div>
+                <button class="btn btn-outline-secondary btn-sm" @click="gkPersonQuery.xqh = []">全部</button>
+            </div>
+        </div>
+
+        <div class="row">
+            <label class="col-md-1 d-flex"></label>
+            <div class="col-md-8 d-flex">
+                <label class="input-group-text d-flex align-items-center">
+                    报名点代码：
+                    <input v-model="gkPersonQuery.bmd" class="form-control-sm form-control" @keyup.enter="query">
+                </label>
+                <label class="input-group-text d-flex align-items-center">
+                    报名点修正代码
+                    <input v-model="gkPersonQuery.bmdFix" class="form-control-sm form-control" @keyup.enter="query">
+                </label>
+            </div>
+        </div>
+
+        <div class="row">
+            <label class="col-md-1 d-flex"></label>
+            <div class="col-md-8 d-flex">
+                <label class="input-group-text d-flex align-items-center">
+                    录取院校名称
+                    <input v-model="gkPersonQuery.yxmc" class="form-control-sm form-control" @keyup.enter="query">
+                </label>
+                <label class="input-group-text d-flex align-items-center">
+                    录取专业名称：
+                    <input v-model="gkPersonQuery.zymc" class="form-control-sm form-control" @keyup.enter="query">
+                </label>
+            </div>
+        </div>
+    </div>
+    <div class="row g-5 container-fluid">
+        <label class="col-md-1 d-flex"></label>
+        <div class="col-md-2 d-flex">
+            <button class="btn btn-primary btn-sm" @click="query">查询</button>
+            <button class="btn btn-warning btn-sm ms-3" @click="clearQuery">清空</button>
+        </div>
+    </div>
+
+    <hr>
+
+    <div id="result" class="container-fluid">
+        <div class="col-md-12 d-flex justify-content-center" v-if="querying">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">查询中...</span>
+            </div>
+            <span>查询中...</span>
+        </div>
+        <div class="row">
+            <label class="col-md-1 d-flex"></label>
+            <div class="col-md-10 card-body card border-warning" v-if="gkPersonSimpleDtoList == null && !querying">
+                <span style="text-align: center">无查询数据</span>
+            </div>
+            <div class="col-md-1" v-if="gkPersonSimpleDtoList == null && !querying"></div>
+
+            <div class="col-md-9 row" v-if="gkPersonSimpleDtoList && gkPersonSimpleDtoList.length > 0">
+                <div id="count" class="col-md-3" style="text-align: center">
+                    <span class="d-flex input-group-text input-group-sm">查询结果：{{gkPersonSimpleDtoList.length}}条(最多显示100条)</span>
+                </div>
+                <div class="card card-body m-1 row" v-for="(gkPersonSimpleDto, index) in gkPersonSimpleDtoList">
+                    <label>{{index + 1}}</label>
+                    <div class="col-md-12 d-flex card card-body"
+                         :class="gkPersonSimpleDto.yxmc? 'border-primary': 'border-danger'">
+                        <div class="row mb-1">
+                            <div class="col-md-1 form-floating">
+                                <input id="year" class="form-control-sm form-control" v-model="gkPersonSimpleDto.year"
+                                       readonly>
+                                <label for="year">年份</label>
+                            </div>
+                            <div class="col-md-2 form-floating">
+                                <input id="xm" class="form-control-sm form-control" v-model="gkPersonSimpleDto.xm"
+                                       readonly>
+                                <label for="xm">姓名</label>
+                            </div>
+                            <div class="col-md-3 d-flex form-floating" v-if="gkPersonSimpleDto.ksh">
+                                <input id="ksh" class="form-control-sm form-control" v-model="gkPersonSimpleDto.ksh"
+                                       readonly>
+                                <label for="ksh">考生号</label>
+                            </div>
+                            <div class="col-md-3 d-flex form-floating" v-if="gkPersonSimpleDto.bmxh">
+                                <input id="bmxh" class="form-control-sm form-control" v-model="gkPersonSimpleDto.bmxh"
+                                       readonly>
+                                <label for="bmxh">报名序号</label>
+                            </div>
+                            <div class="col-md-3 d-flex form-floating" v-if="gkPersonSimpleDto.zkzh">
+                                <input id="zkzh" class="form-control-sm form-control" v-model="gkPersonSimpleDto.zkzh"
+                                       readonly>
+                                <label for="zkzh">准考证号</label>
+                            </div>
+                            <div class="col-md-3 d-flex form-floating" v-if="gkPersonSimpleDto.xjfh">
+                                <input id="xjfh" class="form-control-sm form-control" v-model="gkPersonSimpleDto.xjfh"
+                                       readonly>
+                                <label for="xjfh">学籍辅号</label>
+                            </div>
+                        </div>
+
+                        <div class="row mb-1">
+                            <div class="col-md-1 d-flex form-floating" v-if="gkPersonSimpleDto.xqh">
+                                <input id="xqh" class="form-control-sm form-control" v-model="gkPersonSimpleDto.xqh"
+                                       readonly>
+                                <label for="xqh">县区</label>
+                            </div>
+                            <div class="col-md-2 d-flex form-floating" v-if="gkPersonSimpleDto.bmd">
+                                <input id="bmd" class="form-control-sm form-control" v-model="gkPersonSimpleDto.bmd"
+                                       readonly>
+                                <label for="bmd">报名点代码</label>
+                            </div>
+                            <div class="col-md-3 d-flex form-floating" v-if="gkPersonSimpleDto.bmdmc">
+                                <input id="bmdmc" class="form-control-sm form-control" v-model="gkPersonSimpleDto.bmdmc"
+                                       readonly>
+                                <label for="bmdmc">报名点名称</label>
+                            </div>
+                            <div class="col-md-2 d-flex form-floating" v-if="gkPersonSimpleDto.bmdFix">
+                                <input id="bmdFix" class="form-control-sm form-control"
+                                       v-model="gkPersonSimpleDto.bmdFix" readonly>
+                                <label for="bmdFix">报名点代码修正</label>
+                            </div>
+                            <div class="col-md-1 d-flex form-floating" v-if="gkPersonSimpleDto.bj">
+                                <input id="bj" class="form-control-sm form-control" v-model="gkPersonSimpleDto.bj"
+                                       readonly>
+                                <label for="bj">班级</label>
+                            </div>
+                            <div class="col-md-3 d-flex form-floating" v-if="gkPersonSimpleDto.qtxx">
+                                <input id="qtxx" class="form-control-sm form-control" v-model="gkPersonSimpleDto.qtxx"
+                                       readonly>
+                                <label for="qtxx">毕业学校名称</label>
+                            </div>
+                        </div>
+
+                        <div class="row mb-1">
+                            <div class="col-md-1 d-flex form-floating" v-if="gkPersonSimpleDto.yxmc">
+                                <input id="cc" class="form-control-sm form-control" v-model="gkPersonSimpleDto.cc"
+                                       readonly>
+                                <label for="cc">层次</label>
+                            </div>
+                            <div class="col-md-1 d-flex form-floating" v-if="gkPersonSimpleDto.xz">
+                                <input id="xz" class="form-control-sm form-control" v-model="gkPersonSimpleDto.xz"
+                                       readonly>
+                                <label for="xz">学制（年）</label>
+                            </div>
+                            <div class="col-md-2 d-flex form-floating" v-if="gkPersonSimpleDto.lqsj">
+                                <input id="lqsj" class="form-control-sm form-control" v-model="gkPersonSimpleDto.lqsj"
+                                       readonly>
+                                <label for="lqsj">录取时间</label>
+                            </div>
+                            <div class="col-md-2 d-flex form-floating" v-if="gkPersonSimpleDto.lxdh">
+                                <input id="lxdh" class="form-control-sm form-control" v-model="gkPersonSimpleDto.lxdh"
+                                       readonly>
+                                <label for="lxdh">电话</label>
+                            </div>
+                            <div class="col-md-2 d-flex form-floating" v-if="gkPersonSimpleDto.lxdh2">
+                                <input id="lxdh2" class="form-control-sm form-control" v-model="gkPersonSimpleDto.lxdh2"
+                                       readonly>
+                                <label for="lxdh2">电话</label>
+                            </div>
+                            <div class="col-md-2 d-flex form-floating" v-if="gkPersonSimpleDto.gddh">
+                                <input id="gddh" class="form-control-sm form-control" v-model="gkPersonSimpleDto.gddh"
+                                       readonly>
+                                <label for="gddh">电话</label>
+                            </div>
+                        </div>
+
+                        <div class="row mb-1">
+                            <div class="col-md-1 d-flex form-floating" v-if="gkPersonSimpleDto.yxdh">
+                                <input id="yxdh" class="form-control-sm form-control" v-model="gkPersonSimpleDto.yxdh"
+                                       readonly>
+                                <label for="yxdh">院校代号</label>
+                            </div>
+                            <div class="col-md-1 d-flex form-floating" v-if="gkPersonSimpleDto.yxdm">
+                                <input id="yxdm" class="form-control-sm form-control" v-model="gkPersonSimpleDto.yxdm"
+                                       readonly>
+                                <label for="yxdm">院校代码</label>
+                            </div>
+                            <div class="col-md-3 d-flex form-floating" v-if="gkPersonSimpleDto.yxmc">
+                                <input id="yxmc" class="form-control-sm form-control" v-model="gkPersonSimpleDto.yxmc"
+                                       readonly>
+                                <label for="yxmc">院校名称</label>
+                            </div>
+
+                            <div class="col-md-1 d-flex form-floating" v-if="gkPersonSimpleDto.zydh">
+                                <input id="zydh" class="form-control-sm form-control" v-model="gkPersonSimpleDto.zydh"
+                                       readonly>
+                                <label for="zydh">专业代号</label>
+                            </div>
+                            <div class="col-md-1 d-flex form-floating" v-if="gkPersonSimpleDto.zydm">
+                                <input id="zydm" class="form-control-sm form-control" v-model="gkPersonSimpleDto.zydm"
+                                       readonly>
+                                <label for="zydm">专业代码</label>
+                            </div>
+                            <div class="col-md-3 d-flex form-floating" v-if="gkPersonSimpleDto.zymc">
+                                <input id="zymc" class="form-control-sm form-control" v-model="gkPersonSimpleDto.zymc"
+                                       readonly>
+                                <label for="zymc">专业名称</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 

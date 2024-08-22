@@ -10,7 +10,7 @@
     </parent>
     <groupId>cn.sleepybear</groupId>
     <artifactId>gk-data-display</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0.0</version>
     <name>gk-data-display</name>
     <description>gk-data-display</description>
     <url/>

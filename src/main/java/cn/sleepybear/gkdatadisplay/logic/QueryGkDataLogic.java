@@ -1,5 +1,6 @@
 package cn.sleepybear.gkdatadisplay.logic;
 
+import cn.sleepybear.gkdatadisplay.config.MyConfig;
 import cn.sleepybear.gkdatadisplay.dto.GkPersonDto;
 import cn.sleepybear.gkdatadisplay.model.GkPerson;
 import cn.sleepybear.gkdatadisplay.service.GkPersonService;
@@ -19,10 +20,12 @@ import java.util.List;
 public class QueryGkDataLogic {
 
     @Resource
+    private MyConfig myConfig;
+    @Resource
     private GkPersonService gkPersonService;
 
     public List<GkPersonDto> query(LambdaQueryWrapper<GkPerson> queryWrapper) {
-        queryWrapper.last("limit 100");
+        queryWrapper.last("limit " + myConfig.getSqlLimitSizeInt());
         List<GkPerson> list = gkPersonService.list(queryWrapper);
         return GkPersonDto.convert(list);
     }

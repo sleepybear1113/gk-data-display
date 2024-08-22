@@ -11,10 +11,10 @@ axios.interceptors.response.use(
             } else {
                 let message = res.message;
                 if (code > -10) {
-                    alert(message);
+                    alertMsg(null, message, "warning");
                     return Promise.reject(response);
                 } else if (code) {
-                    alert("系统错误:" + message);
+                    alertMsg("系统错误", message, "danger");
                     // 直接拒绝往下面返回结果信息
                     return Promise.reject(response);
                 }
@@ -27,7 +27,7 @@ axios.interceptors.response.use(
     (error) => {
         let response = error.response;
         if (response == null) {
-            alert(`请求失败，请检查程序是否启动`);
+            alertMsg(`请求失败，请检查程序是否启动`, "", "danger");
             return Promise.reject(error);
         }
         let status = response.status;
@@ -38,11 +38,11 @@ axios.interceptors.response.use(
             return Promise.reject(error);
         }
         if (status >= 500) {
-            alert(`[${status}]服务器发生错误，无法处理！\n${request.responseURL}`);
+            alertMsg(`服务器发生错误[${status}]，无法处理！`, `${request.responseURL}`, "danger");
             return Promise.reject(error);
         }
 
-        alert(`请求失败，code = ${status}\n url：${request.responseURL}`);
+        alertMsg(`请求失败，code = ${status}`, `url：${request.responseURL}`, "danger");
         return Promise.reject(error);
     }
 );
@@ -60,5 +60,23 @@ axios.interceptors.request.use(
         return Promise.reject(error);
     },
 );
+
+function alertMsg(title, message, type, duration = 3000) {
+    let t = new Date().getTime();
+    let alertInfo = {
+        "id": t,
+        "title": title,
+        "msg": message,
+        "type": type,
+        "time": new Date().getTime(),
+        "duration": duration
+    };
+    window.app.alertObj[t] = alertInfo;
+    let timer = setTimeout(() => {
+        delete window.app.alertObj[t];
+        clearTimeout(timer);
+    }, duration);
+    alertInfo.timer = timer;
+}
 
 axios.defaults.baseURL = "/api-gk-data-display/";

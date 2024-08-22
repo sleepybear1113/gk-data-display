@@ -1,6 +1,13 @@
+server:
+  port: 8765
+  compression:
+    enabled: true
 spring:
   application:
     name: gk-data-display
   datasource:
     driver-class-name: org.sqlite.JDBC
     url: jdbc:sqlite:db/gk_luqu_data.db
+my-config:
+  version: @project.version@
+  sql-limit-size: 100
